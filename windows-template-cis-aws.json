@@ -1,0 +1,80 @@
+{
+    "variables": {
+        "region": "eu-central-1",
+        "kms_key_id": "{{env `KEY`}}",
+        "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+        "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+        "aws_session_token": "{{env `AWS_SESSION_TOKEN`}}",
+        "subnet_id": "{{env `SUBNET`}}",
+        "vpc_id": "{{env `VPC`}}"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "user_data_file": "powershell/ec2-data.ps1",
+            "access_key": "{{user `aws_access_key`}}",
+            "secret_key": "{{user `aws_secret_key`}}",
+            "token": "{{user `aws_session_token`}}",
+            "region": "eu-central-1",
+            "vpc_id": "{{user `vpc_id`}}",
+            "subnet_id": "{{user `subnet_id`}}",
+            "encrypt_boot": "true",
+            "kms_key_id": "{{user `kms_key_id`}}",
+            "instance_type": "t2.large",
+            "communicator": "winrm",
+            "winrm_username": "Administrator",
+            "winrm_password": "###############",
+            "winrm_use_ssl": true,
+            "winrm_insecure": true,
+            "ami_description": "CIS Microsoft Windows Server 2016 Benchmark Baseline AMI for Testing Servicesinstances",
+            "ami_name": "Win2016-QAWin-{{isotime \"2006-01-02\"}}",
+            "ami_block_device_mappings": [
+                {
+                    "device_name": "/dev/sda1",
+                    "volume_size": 40,
+                    "volume_type": "gp2",
+                    "delete_on_termination": true
+                }
+            ],
+            "launch_block_device_mappings": [
+                {
+                    "device_name": "/dev/sda1",
+                    "volume_size": 40,
+                    "volume_type": "gp2",
+                    "delete_on_termination": true
+                }
+            ],
+            "source_ami_filter": {
+                "filters": {
+                    "virtualization-type": "hvm",
+                    "root-device-type": "ebs",
+                    "name": "CIS Microsoft Windows Server 2016 Benchmark*"
+                },
+                "most_recent": true,
+                "owners": "679593333241"
+            },
+            "run_tags": {
+                "Name": "Packer-Builder-Windows",
+                "OS_Version": "CIS Microsoft Windows Server 2016 Benchmark Base",
+                "Release": "Latest",
+                "Runner": "Windows"
+            },
+            "tags": {
+                "Name": "Win2016-QAWin-baseline",
+                "ami_version": "{{isotime \"2006-01-02\"}}",
+                "ami_os": "CIS Microsoft Windows Server 2016 Benchmark",
+                "ami_cis_benchmark_version": "1.0.0"
+            }
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "powershell",
+            "inline": [
+                "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Scripts\\SendWindowsIsReady.ps1 -Schedule",
+                "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Scripts\\InitializeInstance.ps1 -Schedule",
+                "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Scripts\\SysprepInstance.ps1 -NoShutdown"
+            ]
+        }
+    ]
+}
